@@ -1,0 +1,138 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: var(--font-outfit), -apple-system, sans-serif;
+  --font-mono: var(--font-jetbrains), monospace;
+
+  --color-obsidian: #04050a;
+  --color-surface: #0a0c16;
+  --color-card: rgba(16, 20, 36, 0.6);
+  --color-card-hover: rgba(24, 30, 52, 0.8);
+  
+  --color-cyan-pulse: #00f2fe;
+  --color-neural-violet: #7f52ff;
+  --color-electric-blue: #2575fc;
+  --color-emerald-check: #10b981;
+
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-float: float 6s ease-in-out infinite;
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes orbit {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
+  @keyframes profileGlow {
+    0%, 100% { opacity: 0.35; transform: scale(1); }
+    50% { opacity: 0.65; transform: scale(1.08); }
+  }
+}
+
+:root {
+  --bg-obsidian: #04050a;
+  --bg-surface: #0a0c16;
+  --text-primary: #f3f4f6;
+  --text-secondary: #94a3b8;
+  --text-tertiary: #475569;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: auto; /* Lenis handles smooth scrolling */
+}
+
+body {
+  background: var(--bg-obsidian);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ───────────── CUSTOM SCROLLBAR ───────────── */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #04050a;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(127, 82, 255, 0.3);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 242, 254, 0.5);
+}
+
+/* ───────────── GLASSMORPHISM UTILITIES ───────────── */
+.glass-panel {
+  background: rgba(16, 20, 36, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glass-panel-hover {
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.glass-panel-hover:hover {
+  background: rgba(24, 30, 52, 0.8);
+  border-color: rgba(0, 242, 254, 0.3);
+  box-shadow: 0 0 30px -10px rgba(0, 242, 254, 0.15);
+  transform: translateY(-2px);
+}
+
+.glass-nav {
+  background: rgba(10, 12, 22, 0.75);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+/* ───────────── GLOW TEXT & EFFECTS ───────────── */
+.glow-text-cyan {
+  text-shadow: 0 0 20px rgba(0, 242, 254, 0.6);
+}
+
+.glow-text-violet {
+  text-shadow: 0 0 20px rgba(127, 82, 255, 0.6);
+}
+
+.glow-border-cyan {
+  box-shadow: 0 0 25px -5px rgba(0, 242, 254, 0.25);
+}
+
+.glow-border-violet {
+  box-shadow: 0 0 25px -5px rgba(127, 82, 255, 0.25);
+}
+
+/* Text Gradient Utilities */
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #ffffff 0%, #00f2fe 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-violet {
+  background: linear-gradient(135deg, #ffffff 0%, #7f52ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-gradient-ai {
+  background: linear-gradient(135deg, #00f2fe 0%, #7f52ff 50%, #2575fc 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
