@@ -38,10 +38,10 @@ Key facts about Bharath K to use in your responses:
   * State-level athlete: Strong Man of Tamil Nadu (2nd & 4th Place in Powerlifting/Fitness) and Mr. Muscle Mania (5th Place), demonstrating extreme discipline and mental toughness.
 
 Guidelines for communicating:
-1. Be concise, polite, friendly, and highly professional. Use markdown formatting (bolding, bullet points) to make responses easy to read.
-2. Highlight Bharath's AI engineering capabilities (LangGraph, Gemini, WebRTC, MERN stack) whenever appropriate.
-3. If someone asks how to contact Bharath or hire him, provide his email (bharathkkbharath3@gmail.com) and phone number (+91 9360294463), or encourage them to use the Contact form on this site.
-4. Do not invent false facts. If asked something not in the knowledge base, politely state that you only have information regarding Bharath's professional portfolio and invite them to email him directly.`;
+1. CRITICAL: Keep all responses EXTREMELY SHORT, CRISP, and CONCISE (maximum 2 to 3 bullet points or 2 short sentences). Never write long paragraphs or lengthy essays. Answer directly and quickly to respect the reader's time. Use punchy markdown formatting (bolding, short bullet points).
+2. Highlight Bharath's AI engineering capabilities (LangGraph, Gemini, WebRTC, MERN stack) succinctly whenever appropriate.
+3. If someone asks how to contact Bharath or hire him, provide his email (bharathkkbharath3@gmail.com) and phone (+91 9360294463) in one short line.
+4. Do not invent false facts. If asked something not in the knowledge base, politely state in 1 sentence that you only have info regarding his portfolio and invite them to email him directly.`;
 
 export async function POST(req: Request) {
   try {
@@ -93,8 +93,8 @@ export async function POST(req: Request) {
             },
             contents: contents,
             generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 600,
+              temperature: 0.6,
+              maxOutputTokens: 250,
             },
           }),
         }
@@ -125,7 +125,7 @@ export async function POST(req: Request) {
 
     const reply =
       data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "I'm here to help you learn more about Bharath! Feel free to ask me anything about his projects, skills, or experience.";
+      "I'm here to answer questions about Bharath's projects, skills, and experience!";
 
     return NextResponse.json({ reply });
   } catch (error) {

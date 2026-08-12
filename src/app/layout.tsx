@@ -19,30 +19,26 @@ const jetbrainsMono = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Bharath K — AI Engineer & GenAI Architect",
+  title: "Bharath K | Full Stack Developer & AI Specialist",
   description:
-    "World-class AI Engineer & Full-Stack Architect. Specializing in autonomous LangGraph agents, LLM orchestration pipelines, real-time WebRTC systems, and production-grade Next.js applications.",
+    "Portfolio of Bharath K. I build scalable MERN & Next.js web applications, AI automation workflows, and IoT solutions.",
   keywords: [
     "Bharath K",
-    "AI Engineer",
-    "GenAI Architect",
     "Full Stack Developer",
-    "LangGraph",
-    "OpenAI API",
-    "Gemini API",
-    "Next.js",
-    "TypeScript",
-    "WebRTC",
-    "AI Agents",
+    "Next.js Developer",
+    "MERN Stack",
+    "AI Automation",
+    "Make.com",
+    "Freelancer",
+    "Chennai",
+    "Portfolio"
   ],
-  authors: [{ name: "Bharath K", url: "https://github.com/bharath9360" }],
+  metadataBase: new URL("https://bharathk.online"),
   openGraph: {
-    title: "Bharath K — AI Engineer & GenAI Architect",
+    title: "Bharath K | Full Stack Developer & AI Specialist",
     description:
-      "Architecting autonomous agents, real-time LLM workflows, and production-grade web interfaces.",
-    url: "https://bharathk.ai",
-    siteName: "Bharath K Portfolio",
-    locale: "en_US",
+      "Portfolio of Bharath K. I build scalable MERN & Next.js web applications, AI automation workflows, and IoT solutions.",
+    url: "https://bharathk.online",
     type: "website",
   },
 };
