@@ -21,12 +21,12 @@ export const portfolioData: PortfolioSchema = {
     github: "https://github.com/bharath9360",
     linkedin: "https://www.linkedin.com/in/bharathk22",
     resumeUrl:
-      "https://drive.google.com/file/d/1dZjxvkFrMq0xfdfjFOxRHFl9doYDbzro/view?usp=sharing",
+      "https://drive.google.com/file/d/1mpINbx_ooE_aS1MxtFCOxvcKY4nCjMmN/view?usp=sharing",
     bio: "A relentless AI Engineer and Full-Stack Developer pursuing B.E. in Computer Science Engineering at M.A.M College of Engineering and Technology. I specialize in designing autonomous LangGraph agents, orchestrating multi-modal LLM applications, engineering low-latency WebRTC hardware bridges, and shipping resilient, production-ready web platforms.",
     education:
       "B.E. Computer Science Engineering — M.A.M College of Engineering and Technology (2022–2026, CGPA: 8.0)",
     profileImg:
-      "https://res.cloudinary.com/dnby5o1lt/image/upload/v1753957805/bharath_profisnal_pic_inutoj.png",
+      "/profile.jpg",
     availabilityStatus: "Available for AI Engineering & Full-Stack Roles",
   },
 

@@ -1,8 +1,9 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: var(--font-outfit), -apple-system, sans-serif;
-  --font-mono: var(--font-jetbrains), monospace;
+  --font-sans: var(--font-sans), -apple-system, sans-serif;
+  --font-display: var(--font-display), sans-serif;
+  --font-mono: var(--font-mono), monospace;
 
   --color-obsidian: #04050a;
   --color-surface: #0a0c16;
@@ -52,13 +53,51 @@ html {
 body {
   background: var(--bg-obsidian);
   color: var(--text-primary);
-  font-family: var(--font-sans);
+  font-family: var(--font-sans), 'Space Grotesk', -apple-system, sans-serif;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* ───────────── CUSTOM SCROLLBAR ───────────── */
+/* Apply Syne to all headings for cinematic impact */
+h1, h2, h3, h4 {
+  font-family: var(--font-display), 'Syne', sans-serif;
+}
+
+/* ───────────── ANIMATIONS ───────────── */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+    filter: blur(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+  }
+}
+
+@keyframes fadeInSubtitle {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.fade-in-subtitle {
+  animation: fadeInSubtitle 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* ───────────── SHADCN UTILS ───────────── */
 ::-webkit-scrollbar {
   width: 6px;
 }
@@ -135,4 +174,191 @@ body {
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+}
+
+/* ═══════════════════════════════════════════════════════
+   SCENE 01 — CINEMATIC HERO
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Loading bar (top of viewport) ───────────────────── */
+.cinematic-loading-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #00f2fe, #7f52ff, #2575fc);
+  z-index: 100;
+  transition: width 0.2s ease;
+  box-shadow: 0 0 12px rgba(0, 242, 254, 0.6);
+}
+
+/* ── Cinematic vignette ───────────────────────────────── */
+.cinematic-vignette {
+  background: radial-gradient(
+    ellipse at center,
+    transparent 40%,
+    rgba(4, 5, 10, 0.55) 75%,
+    rgba(4, 5, 10, 0.85) 100%
+  );
+  z-index: 5;
+}
+
+/* ── Screen glow (subtle breathing cyan edge) ────────── */
+.cinematic-glow {
+  z-index: 6;
+  border-radius: 0;
+  box-shadow: inset 0 0 120px rgba(0, 242, 254, 0.04),
+              inset 0 0 60px rgba(127, 82, 255, 0.03);
+  animation: cinematic-glow-pulse 4s ease-in-out infinite;
+}
+
+@keyframes cinematic-glow-pulse {
+  0%, 100% { opacity: 0.5; }
+  50%       { opacity: 1; }
+}
+
+/* ── Overlay text ────────────────────────────────────── */
+.cinematic-label {
+  font-family: var(--font-sans, sans-serif);
+  font-size: clamp(0.7rem, 1.2vw, 0.85rem);
+  font-weight: 500;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: rgba(0, 242, 254, 0.85);
+  margin-bottom: 0.75rem;
+  text-shadow: 0 0 18px rgba(0, 242, 254, 0.5);
+}
+
+.cinematic-name {
+  font-family: var(--font-display), 'Syne', sans-serif;
+  font-size: clamp(2.5rem, 10vw, 7rem);
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  background: linear-gradient(135deg, #ffffff 20%, #00f2fe 60%, #7f52ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  margin-bottom: 1rem;
+  filter: drop-shadow(0 0 30px rgba(0, 242, 254, 0.25))
+          drop-shadow(0 0 60px rgba(127, 82, 255, 0.15));
+}
+
+.cinematic-tagline {
+  font-family: var(--font-sans, sans-serif);
+  font-size: clamp(0.75rem, 1.5vw, 0.95rem);
+  font-weight: 400;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.5);
+  margin-bottom: 3rem;
+}
+
+/* ── Scroll hint ─────────────────────────────────────── */
+.cinematic-scroll-hint {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.65rem;
+  font-weight: 500;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.35);
+}
+
+.cinematic-arrow {
+  width: 20px;
+  height: 20px;
+  color: rgba(0, 242, 254, 0.5);
+  animation: cinematic-arrow-bounce 2s ease-in-out infinite;
+}
+
+@keyframes cinematic-arrow-bounce {
+  0%, 100% { transform: translateY(0); opacity: 0.4; }
+  50%       { transform: translateY(6px); opacity: 0.9; }
+}
+
+/* ═══════════════════════════════════════════════════════
+   SHARED SECTION UTILITIES
+   ═══════════════════════════════════════════════════════ */
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(32px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.section-label {
+  font-size: clamp(0.65rem, 1vw, 0.75rem);
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: rgba(0, 242, 254, 0.75);
+  margin-bottom: 0.75rem;
+}
+
+.section-heading {
+  font-family: var(--font-display), 'Syne', sans-serif;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 0%, #c0cfe8 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-heading-accent {
+  font-family: var(--font-display), 'Syne', sans-serif;
+  font-size: clamp(2rem, 5vw, 3.5rem);
+  font-weight: 800;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  background: linear-gradient(135deg, #ffffff 20%, #00f2fe 60%, #7f52ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.section-subtext {
+  font-size: clamp(0.9rem, 1.5vw, 1.05rem);
+  color: rgba(148, 163, 184, 0.8);
+  line-height: 1.7;
+}
+
+.premium-card {
+  background: rgba(16, 20, 36, 0.65);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.premium-card:hover {
+  background: rgba(24, 30, 52, 0.85);
+  border-color: rgba(0, 242, 254, 0.2);
+  box-shadow: 0 0 40px -12px rgba(0, 242, 254, 0.12),
+              0 20px 60px -20px rgba(0, 0, 0, 0.6);
+  transform: translateY(-3px);
+}
+
+.tech-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(200, 220, 255, 0.8);
+  white-space: nowrap;
 }

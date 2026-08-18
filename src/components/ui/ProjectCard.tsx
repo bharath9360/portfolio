@@ -148,7 +148,8 @@ export default function ProjectCard({
             <span>Architecture Highlight</span>
           </div>
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-mono">
-            // {project.architectureHighlights[0]}
+            {"// "}
+            {project.architectureHighlights[0]}
           </p>
         </div>
       </div>
