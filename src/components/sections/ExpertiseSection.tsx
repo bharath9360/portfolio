@@ -5,7 +5,7 @@ import { motion } from "framer-motion";
 import { Layers, Cpu, BrainCircuit, Workflow } from "lucide-react";
 import { portfolioData } from "@/data/portfolioData";
 
-const iconMap: Record<string, React.ElementType> = {
+const iconMap: Record<string, any> = {
   Layers,
   Cpu,
   BrainCircuit,
