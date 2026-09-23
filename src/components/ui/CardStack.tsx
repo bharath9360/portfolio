@@ -309,20 +309,20 @@ export function CardStack<T extends CardStackItem>({
 }
 
 function DefaultProjectCard({ item, active }: { item: CardStackItem; active: boolean }) {
-  const accent = item.accentColor ?? "#00f2fe";
+  const accent = item.accentColor ?? "var(--accent-primary)";
   return (
     <div
-      className="relative h-full w-full flex flex-col"
-      style={{ background: "linear-gradient(160deg, #0d1225 0%, #080c1a 100%)" }}
+      className="relative h-full w-full flex flex-col transition-colors duration-300"
+      style={{ background: "var(--card-bg)" }}
     >
       {/* Top accent bar */}
       <div className="h-1 w-full" style={{ background: `linear-gradient(90deg, ${accent}, transparent)` }} />
 
       {/* Content */}
-      <div className="flex-1 flex flex-col p-6 gap-4">
+      <div className="flex-1 flex flex-col p-5 sm:p-6 gap-3 sm:gap-4">
         {/* Icon + category */}
         <div className="flex items-center gap-3">
-          <span className="text-3xl">{item.icon ?? "🚀"}</span>
+          <span className="text-2xl sm:text-3xl">{item.icon ?? "🚀"}</span>
           <span
             className="text-xs font-semibold tracking-widest uppercase px-3 py-1 rounded-full"
             style={{ color: accent, background: `${accent}15`, border: `1px solid ${accent}30` }}
@@ -332,11 +332,11 @@ function DefaultProjectCard({ item, active }: { item: CardStackItem; active: boo
         </div>
 
         {/* Title */}
-        <h3 className="text-xl font-bold text-white leading-tight">{item.title}</h3>
+        <h3 className="text-lg sm:text-xl font-bold text-[var(--text-primary)] leading-tight">{item.title}</h3>
 
         {/* Description */}
         {item.description && (
-          <p className="text-sm text-white/60 leading-relaxed line-clamp-3">{item.description}</p>
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)] leading-relaxed line-clamp-3">{item.description}</p>
         )}
 
         {/* Tech pills */}
@@ -354,8 +354,8 @@ function DefaultProjectCard({ item, active }: { item: CardStackItem; active: boo
 
       {/* Bottom CTA bar */}
       <div
-        className="px-6 py-4 flex items-center gap-3 border-t"
-        style={{ borderColor: "rgba(255,255,255,0.06)" }}
+        className="px-5 sm:px-6 py-3.5 flex items-center gap-3 border-t"
+        style={{ borderColor: "var(--card-border)" }}
       >
         {item.href && (
           <Link
@@ -363,8 +363,8 @@ function DefaultProjectCard({ item, active }: { item: CardStackItem; active: boo
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-all hover:opacity-90"
-            style={{ background: accent, color: "#04050a" }}
+            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg transition-all hover:opacity-90 shadow-md"
+            style={{ background: accent, color: "#ffffff" }}
           >
             <SquareArrowOutUpRight className="w-3.5 h-3.5" />
             Live Demo
@@ -376,14 +376,14 @@ function DefaultProjectCard({ item, active }: { item: CardStackItem; active: boo
             target="_blank"
             rel="noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-white/10 text-white/70 hover:text-white hover:border-white/30 transition-all"
+            className="flex items-center gap-1.5 text-xs font-semibold px-4 py-2 rounded-lg border border-[var(--card-border)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-all"
           >
             <GithubIcon className="w-3.5 h-3.5" />
             GitHub
           </Link>
         )}
         {active && (
-          <span className="ml-auto text-xs text-white/30">Drag to navigate</span>
+          <span className="ml-auto text-xs text-[var(--text-tertiary)] hidden sm:inline font-mono">Drag to navigate</span>
         )}
       </div>
 

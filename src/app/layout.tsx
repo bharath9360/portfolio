@@ -1,28 +1,29 @@
 import type { Metadata } from "next";
-import { Space_Grotesk, Syne, JetBrains_Mono } from "next/font/google";
+import { Plus_Jakarta_Sans, Outfit, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 import SmoothScroll from "@/components/layout/SmoothScroll";
 import AIChatbot from "@/components/ui/AIChatbot";
+import { ThemeProvider } from "@/context/ThemeContext";
 
-const spaceGrotesk = Space_Grotesk({
+const plusJakarta = Plus_Jakarta_Sans({
   variable: "--font-sans",
   subsets: ["latin"],
   display: "swap",
-  weight: ["300", "400", "500", "600", "700"],
+  weight: ["300", "400", "500", "600", "700", "800"],
 });
 
-const syne = Syne({
+const outfit = Outfit({
   variable: "--font-display",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "600", "700", "800"],
+  weight: ["400", "500", "600", "700", "800", "900"],
 });
 
 const jetbrainsMono = JetBrains_Mono({
   variable: "--font-mono",
   subsets: ["latin"],
   display: "swap",
-  weight: ["400", "500", "700"],
+  weight: ["400", "500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -50,6 +51,13 @@ export const metadata: Metadata = {
   },
 };
 
+// Preload the first cinematic frame so it starts downloading before React boots
+// This improves LCP (Largest Contentful Paint) for the hero canvas
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -58,15 +66,36 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${spaceGrotesk.variable} ${syne.variable} ${jetbrainsMono.variable} h-full antialiased dark`}
+      className={`${plusJakarta.variable} ${outfit.variable} ${jetbrainsMono.variable} h-full antialiased`}
+      suppressHydrationWarning
+      data-theme="dark"
     >
-      <body className="min-h-full flex flex-col bg-[#04050a] text-[#f3f4f6] selection:bg-[#00f2fe]/30 selection:text-white">
-        <SmoothScroll>
-          {children}
-          <AIChatbot />
-        </SmoothScroll>
+      <head>
+        {/* Preload first cinematic frame – critical for hero LCP */}
+        <link
+          rel="preload"
+          as="image"
+          href="/cinematic/scene-01/frames/webp/ezgif-frame-001.webp"
+          type="image/webp"
+        />
+        <link
+          rel="preload"
+          as="image"
+          href="/cinematic/scene-01/frames/ezgif-frame-001.jpg"
+          type="image/jpeg"
+        />
+      </head>
+      <body
+        className="min-h-full flex flex-col bg-[var(--bg-obsidian)] text-[var(--text-primary)] transition-colors duration-300 selection:bg-[#00f2fe]/30 selection:text-white"
+        suppressHydrationWarning
+      >
+        <ThemeProvider>
+          <SmoothScroll>
+            {children}
+            <AIChatbot />
+          </SmoothScroll>
+        </ThemeProvider>
       </body>
     </html>
   );
 }
-

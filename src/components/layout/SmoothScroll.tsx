@@ -4,8 +4,8 @@ import { useEffect, ReactNode } from "react";
 import Lenis from "lenis";
 
 type LenisWithEvents = Lenis & {
-  on: (event: string, cb: () => void) => void;
-  off: (event: string, cb: () => void) => void;
+  on: (event: string, cb: (lenisInstance: Lenis) => void) => void;
+  off: (event: string, cb: (lenisInstance: Lenis) => void) => void;
 };
 
 export default function SmoothScroll({ children }: { children: ReactNode }) {

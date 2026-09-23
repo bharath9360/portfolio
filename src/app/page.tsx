@@ -13,15 +13,15 @@ export default function Home() {
     <div className="min-h-screen bg-[#04050a] text-[#f3f4f6] flex flex-col selection:bg-[#00f2fe]/30 selection:text-white relative">
       <Navbar />
       <main className="flex-grow">
-        {/* Scene 01 – Cinematic 3D Hero (untouched) */}
+        {/* ── Cinematic scroll-driven Hero ── */}
         <CinematicHeroScene01 />
 
-        {/* Hero → Sections bridge gradient */}
+        {/* Bridge gradient from Hero into ExpertiseSection */}
         <div
           aria-hidden="true"
           style={{
+            height: "80px",
             marginTop: "-2px",
-            height: "120px",
             background: "linear-gradient(to bottom, #04050a 0%, #060810 100%)",
             pointerEvents: "none",
           }}

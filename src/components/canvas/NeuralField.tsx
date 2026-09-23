@@ -4,17 +4,29 @@ import React, { useRef, useMemo, useState, useEffect, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import * as THREE from "three";
 import CanvasFallback from "./CanvasFallback";
+import { useTheme } from "@/context/ThemeContext";
 
-function NeuralNodes({ count = 220 }: { count?: number }) {
+function NeuralNodes({ count = 220, theme = "dark" }: { count?: number; theme?: string }) {
   const pointsRef = useRef<THREE.Points>(null!);
   const linesRef = useRef<THREE.LineSegments>(null!);
 
   const { positions, colors, connections } = useMemo(() => {
     const pos = new Float32Array(count * 3);
     const col = new Float32Array(count * 3);
-    const colorA = new THREE.Color("#00f2fe"); // Electric Cyan
-    const colorB = new THREE.Color("#7f52ff"); // Neural Violet
-    const colorC = new THREE.Color("#2575fc"); // Deep Blue
+
+    let colorA = new THREE.Color("#00f2fe"); // Cyan
+    let colorB = new THREE.Color("#7f52ff"); // Violet
+    let colorC = new THREE.Color("#2575fc"); // Deep Blue
+
+    if (theme === "light") {
+      colorA = new THREE.Color("#0284c7"); // Sapphire
+      colorB = new THREE.Color("#6366f1"); // Indigo
+      colorC = new THREE.Color("#0d9488"); // Teal
+    } else if (theme === "emerald") {
+      colorA = new THREE.Color("#00ff9d"); // Neon Emerald
+      colorB = new THREE.Color("#00e5ff"); // Turquoise
+      colorC = new THREE.Color("#10b981"); // Spring Green
+    }
 
     for (let i = 0; i < count; i++) {
       pos[i * 3] = (Math.random() - 0.5) * 18;
@@ -58,7 +70,7 @@ function NeuralNodes({ count = 220 }: { count?: number }) {
       colors: col,
       connections: new Float32Array(linePos),
     };
-  }, [count]);
+  }, [count, theme]);
 
   useFrame((state, delta) => {
     if (pointsRef.current) {
@@ -66,7 +78,6 @@ function NeuralNodes({ count = 220 }: { count?: number }) {
       pointsRef.current.rotation.x =
         Math.sin(state.clock.elapsedTime * 0.15) * 0.08;
 
-      // Gentle mouse parallax
       pointsRef.current.position.x = THREE.MathUtils.lerp(
         pointsRef.current.position.x,
         state.pointer.x * 1.2,
@@ -84,6 +95,13 @@ function NeuralNodes({ count = 220 }: { count?: number }) {
     }
   });
 
+  const lineMatColor =
+    theme === "light"
+      ? "#6366f1"
+      : theme === "emerald"
+      ? "#00ff9d"
+      : "#7f52ff";
+
   return (
     <group>
       <points ref={pointsRef}>
@@ -91,14 +109,23 @@ function NeuralNodes({ count = 220 }: { count?: number }) {
           <bufferAttribute
             attach="attributes-position"
             args={[positions, 3]}
+            count={positions.length / 3}
+            array={positions}
+            itemSize={3}
           />
-          <bufferAttribute attach="attributes-color" args={[colors, 3]} />
+          <bufferAttribute
+            attach="attributes-color"
+            args={[colors, 3]}
+            count={colors.length / 3}
+            array={colors}
+            itemSize={3}
+          />
         </bufferGeometry>
         <pointsMaterial
-          size={0.07}
+          size={0.075}
           vertexColors
           transparent
-          opacity={0.85}
+          opacity={theme === "light" ? 0.95 : 0.85}
           sizeAttenuation
         />
       </points>
@@ -108,9 +135,16 @@ function NeuralNodes({ count = 220 }: { count?: number }) {
           <bufferAttribute
             attach="attributes-position"
             args={[connections, 3]}
+            count={connections.length / 3}
+            array={connections}
+            itemSize={3}
           />
         </bufferGeometry>
-        <lineBasicMaterial color="#7f52ff" transparent opacity={0.14} />
+        <lineBasicMaterial
+          color={lineMatColor}
+          transparent
+          opacity={theme === "light" ? 0.22 : 0.16}
+        />
       </lineSegments>
     </group>
   );
@@ -120,6 +154,7 @@ export default function NeuralField() {
   const [isMounted, setIsMounted] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const [webGLFailed, setWebGLFailed] = useState(false);
+  const { theme } = useTheme();
 
   useEffect(() => {
     setIsMounted(true);
@@ -144,11 +179,13 @@ export default function NeuralField() {
           camera={{ position: [0, 0, 7], fov: 60 }}
           gl={{ antialias: false, alpha: true, powerPreference: "high-performance" }}
           dpr={[1, 1.5]}
-          onError={() => setWebGLFailed(true)}
+          onCreated={({ gl }) => {
+            if (!gl) setWebGLFailed(true);
+          }}
           className="absolute inset-0"
         >
-          <ambientLight intensity={0.5} />
-          <NeuralNodes count={isMobile ? 120 : 220} />
+          <ambientLight intensity={0.6} />
+          <NeuralNodes count={isMobile ? 120 : 220} theme={theme} />
         </Canvas>
       </Suspense>
     </div>

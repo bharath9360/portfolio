@@ -1,16 +1,38 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
+import gsap from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { useTheme } from "@/context/ThemeContext";
 
-// ─── Configuration ────────────────────────────────────────────────────────────
-const TOTAL_FRAMES  = 100;
-const FRAME_BASE    = "/cinematic/scene-01/frames/ezgif-frame-";
-const FRAME_EXT     = ".png";
-const SCROLL_HEIGHT = "500vh";
-const BATCH_SIZE    = 8;
+// ─── Frame configuration ──────────────────────────────────────────────────────
+const TOTAL_FRAMES   = 160;
+const FRAME_BASE_URL = "/cinematic/scene-01/frames/ezgif-frame-";
+const WEBP_BASE_URL  = "/cinematic/scene-01/frames/webp/ezgif-frame-";
+const SCROLL_HEIGHT  = "600vh";
+const BATCH_SIZE     = 32;   // larger batches → fewer await gaps
+const LERP_SPEED     = 0.12;
+
+/** Detect WebP support once, synchronously at module level */
+let supportsWebP: boolean | null = null;
+function getSupportsWebP(): boolean {
+  if (supportsWebP !== null) return supportsWebP;
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = canvas.height = 1;
+    supportsWebP = canvas.toDataURL("image/webp").startsWith("data:image/webp");
+  } catch {
+    supportsWebP = false;
+  }
+  return supportsWebP;
+}
 
 function frameUrl(n: number): string {
-  return `${FRAME_BASE}${String(n).padStart(3, "0")}${FRAME_EXT}`;
+  const pad = String(n).padStart(3, "0");
+  if (typeof window !== "undefined" && getSupportsWebP()) {
+    return `${WEBP_BASE_URL}${pad}.webp`;
+  }
+  return `${FRAME_BASE_URL}${pad}.jpg`;
 }
 
 function drawCover(
@@ -18,89 +40,109 @@ function drawCover(
   img: HTMLImageElement,
   cw: number,
   ch: number
-) {
+): void {
   if (!img.naturalWidth || !img.naturalHeight) return;
-  const ir = img.naturalWidth / img.naturalHeight;
-  const cr = cw / ch;
-  let dw: number, dh: number, ox: number, oy: number;
-  if (cr > ir) { dw = cw; dh = cw / ir; }
-  else         { dh = ch; dw = ch * ir; }
-  ox = (cw - dw) / 2;
-  oy = (ch - dh) / 2;
+  const imgRatio    = img.naturalWidth / img.naturalHeight;
+  const canvasRatio = cw / ch;
+  let dw: number, dh: number;
+  if (canvasRatio > imgRatio) {
+    dw = cw; dh = cw / imgRatio;
+  } else {
+    dh = ch; dw = ch * imgRatio;
+  }
+  const ox = (cw - dw) / 2;
+  const oy = (ch - dh) / 2;
   ctx.clearRect(0, 0, cw, ch);
   ctx.drawImage(img, ox, oy, dw, dh);
 }
 
-// ─── Component ────────────────────────────────────────────────────────────────
 export default function CinematicHeroScene01() {
   const [mounted, setMounted]               = useState(false);
-  const [loadProgress, setLoadProgress]     = useState(0);
-  const [firstFrameReady, setFirstFrameReady] = useState(false);
-  const [isMobile, setIsMobile]             = useState(false);
+  const [loadPct, setLoadPct]               = useState(0);
+  const [firstReady, setFirstReady]         = useState(false);
+  const [isMobileView, setIsMobileView]     = useState(false);
+  const { theme }                           = useTheme();
 
-  const wrapperRef      = useRef<HTMLDivElement>(null);
-  const stickyRef       = useRef<HTMLDivElement>(null);
-  const canvasRef       = useRef<HTMLCanvasElement>(null);
-  const framesRef       = useRef<(HTMLImageElement | null)[]>(Array(TOTAL_FRAMES).fill(null));
-  const currentFrameRef = useRef(0);
-  const rafIdRef        = useRef(0);
-  const targetFrameRef  = useRef(0);
+  const wrapperRef   = useRef<HTMLDivElement>(null);
+  const canvasRef    = useRef<HTMLCanvasElement>(null);
+  const framesRef    = useRef<(HTMLImageElement | null)[]>(
+    Array(TOTAL_FRAMES).fill(null)
+  );
+  const lerpRef      = useRef(0);
+  const targetRef    = useRef(0);
+  const lastDrawnRef = useRef(-1);
+  const rafRef       = useRef<number>(0);
 
-  // ── Mount guard (SSR safe) ─────────────────────────────────────────────────
-  useEffect(() => { setMounted(true); }, []);
-
-  // ── Mobile detection ───────────────────────────────────────────────────────
   useEffect(() => {
-    const check = () => setIsMobile(window.innerWidth < 768);
-    check();
-    window.addEventListener("resize", check, { passive: true });
-    return () => window.removeEventListener("resize", check);
+    setMounted(true);
+    setIsMobileView(window.innerWidth < 768);
+    gsap.registerPlugin(ScrollTrigger);
+
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ── Resize canvas (HiDPI) ─────────────────────────────────────────────────
   useEffect(() => {
+    if (!mounted || isMobileView) return;
+
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const resize = () => {
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
-      canvas.width  = window.innerWidth  * dpr;
-      canvas.height = window.innerHeight * dpr;
+      canvas.width        = window.innerWidth  * dpr;
+      canvas.height       = window.innerHeight * dpr;
       canvas.style.width  = "100%";
       canvas.style.height = "100%";
-      // Redraw current frame after resize
-      const img = framesRef.current[currentFrameRef.current];
+
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+      ctx.imageSmoothingEnabled = true;
+      ctx.imageSmoothingQuality = "high";
+      const img = framesRef.current[Math.round(lerpRef.current)] || framesRef.current[0];
       if (img) {
-        const ctx = canvas.getContext("2d");
-        if (ctx) {
-          ctx.imageSmoothingEnabled = true;
-          ctx.imageSmoothingQuality = "high";
-          drawCover(ctx, img, canvas.width, canvas.height);
-        }
+        lastDrawnRef.current = Math.round(lerpRef.current);
+        drawCover(ctx, img, canvas.width, canvas.height);
+      } else {
+        lastDrawnRef.current = -1;
       }
     };
 
     resize();
     window.addEventListener("resize", resize, { passive: true });
     return () => window.removeEventListener("resize", resize);
-  }, []);
+  }, [mounted, isMobileView]);
 
-  // ── Frame preloading ──────────────────────────────────────────────────────
   useEffect(() => {
+    if (!mounted || isMobileView) return;
+
     let loaded = 0;
 
-    const loadOne = (i: number) =>
-      new Promise<void>((resolve) => {
+    const loadFrame = (index: number): Promise<void> =>
+      new Promise((resolve) => {
         const img = new window.Image();
-        img.onload = () => {
-          framesRef.current[i] = img;
+
+        const onLoad = async () => {
+          // Decode off-main-thread for smoother first paint
+          try { await img.decode(); } catch { /* ignore */ }
+          framesRef.current[index] = img;
           loaded++;
-          setLoadProgress(Math.round((loaded / TOTAL_FRAMES) * 100));
-          // Draw first frame as soon as it's ready
-          if (i === 0) {
-            setFirstFrameReady(true);
+          setLoadPct(Math.round((loaded / TOTAL_FRAMES) * 100));
+
+          if (index === 0) {
+            setFirstReady(true);
             const canvas = canvasRef.current;
             if (canvas) {
+              if (canvas.width === 0) {
+                const dpr    = Math.min(window.devicePixelRatio || 1, 2);
+                canvas.width  = window.innerWidth  * dpr;
+                canvas.height = window.innerHeight * dpr;
+                canvas.style.width  = "100%";
+                canvas.style.height = "100%";
+              }
               const ctx = canvas.getContext("2d");
               if (ctx) {
                 ctx.imageSmoothingEnabled = true;
@@ -111,204 +153,238 @@ export default function CinematicHeroScene01() {
           }
           resolve();
         };
-        img.onerror = () => { loaded++; setLoadProgress(Math.round((loaded / TOTAL_FRAMES) * 100)); resolve(); };
-        img.src = frameUrl(i + 1); // frames are 1-indexed on disk
+
+        img.onload  = onLoad;
+        img.onerror = () => {
+          loaded++;
+          setLoadPct(Math.round((loaded / TOTAL_FRAMES) * 100));
+          resolve();
+        };
+
+        // Prioritize first 5 frames with fetchpriority hint
+        if (index < 5) {
+          (img as HTMLImageElement & { fetchPriority?: string }).fetchPriority = "high";
+        }
+        img.src = frameUrl(index + 1);
       });
 
-    const loadAll = async () => {
-      // Load frame 0 first (renders immediately)
-      await loadOne(0);
-      // Load remaining in parallel batches
-      for (let i = 1; i < TOTAL_FRAMES; i += BATCH_SIZE) {
+    const preloadAll = async () => {
+      // Load frame 0 first (critical for first paint)
+      await loadFrame(0);
+
+      // Load next 4 frames immediately (user sees these in the first second)
+      await Promise.all([1, 2, 3, 4].map(loadFrame));
+
+      // Load the rest in large parallel batches
+      for (let start = 5; start < TOTAL_FRAMES; start += BATCH_SIZE) {
+        const end   = Math.min(start + BATCH_SIZE, TOTAL_FRAMES);
         const batch: Promise<void>[] = [];
-        for (let j = i; j < Math.min(i + BATCH_SIZE, TOTAL_FRAMES); j++) {
-          batch.push(loadOne(j));
-        }
+        for (let j = start; j < end; j++) batch.push(loadFrame(j));
         await Promise.all(batch);
       }
     };
 
-    loadAll();
-  }, []);
+    preloadAll();
+  }, [mounted, isMobileView]);
 
-  // ── Scroll-driven animation (no GSAP / no Lenis dependency) ──────────────
   useEffect(() => {
-    if (isMobile) return;
-    const wrapper = wrapperRef.current;
-    const canvas  = canvasRef.current;
-    if (!wrapper || !canvas) return;
+    if (!mounted || isMobileView) return;
 
+    const canvas = canvasRef.current;
+    if (!canvas) return;
     const ctx = canvas.getContext("2d");
-    if (ctx) {
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-    }
-
-    // Lerp the frame for smoothness
-    let currentLerp = 0;
-    let lastDrawn   = -1;
-
-    const drawFrame = (f: number) => {
-      const idx = Math.max(0, Math.min(TOTAL_FRAMES - 1, Math.round(f)));
-      if (idx === lastDrawn) return;
-      lastDrawn = idx;
-      currentFrameRef.current = idx;
-      const img = framesRef.current[idx];
-      if (img && ctx) drawCover(ctx, img, canvas.width, canvas.height);
-    };
+    if (!ctx) return;
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
 
     const tick = () => {
-      currentLerp += (targetFrameRef.current - currentLerp) * 0.12;
-      drawFrame(currentLerp);
-      rafIdRef.current = requestAnimationFrame(tick);
+      lerpRef.current += (targetRef.current - lerpRef.current) * LERP_SPEED;
+      const idx = Math.max(0, Math.min(TOTAL_FRAMES - 1, Math.round(lerpRef.current)));
+      const img = framesRef.current[idx];
+      if (img && idx !== lastDrawnRef.current) {
+        lastDrawnRef.current = idx;
+        drawCover(ctx, img, canvas.width, canvas.height);
+      }
+      rafRef.current = requestAnimationFrame(tick);
     };
-    rafIdRef.current = requestAnimationFrame(tick);
 
-    // Scroll position reader — works with Lenis virtual scroll
-    const onScroll = () => {
-      const rect        = wrapper.getBoundingClientRect();
-      const totalScroll = wrapper.offsetHeight - window.innerHeight;
-      if (totalScroll <= 0) return;
-      const scrolled  = -rect.top;
-      const progress  = Math.max(0, Math.min(1, scrolled / totalScroll));
-      targetFrameRef.current = progress * (TOTAL_FRAMES - 1);
+    rafRef.current = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(rafRef.current);
+  }, [mounted, isMobileView]);
 
-      // Fade overlay text out as scrolling begins (first 8%)
-      const overlay = wrapper.querySelector<HTMLElement>(".cinematic-overlay");
-      if (overlay) {
-        const fadeEnd = 0.08;
-        overlay.style.opacity = String(Math.max(0, 1 - progress / fadeEnd));
+  useEffect(() => {
+    if (!mounted || isMobileView) return;
+
+    const wrapper = wrapperRef.current;
+    if (!wrapper) return;
+
+    const tryProxy = () => {
+      const lenis = (window as Window & { __lenis?: { scrollTo: (t: number) => void; on: (e: string, cb: () => void) => void } }).__lenis;
+      if (lenis) {
+        ScrollTrigger.scrollerProxy(document.documentElement, {
+          scrollTop(value) {
+            if (arguments.length && value !== undefined) {
+              lenis.scrollTo(value);
+            }
+            return window.scrollY;
+          },
+          getBoundingClientRect() {
+            return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+          },
+        });
+        lenis.on("scroll", ScrollTrigger.update);
       }
     };
 
-    // Native scroll (works once Lenis has scrolled)
-    window.addEventListener("scroll", onScroll, { passive: true });
-
-    // Hook Lenis directly — reads position from Lenis's own scroll data
-    type LenisInstance = { on: (e: string, cb: (data: { scroll: number }) => void) => void; off: (e: string, cb: (data: { scroll: number }) => void) => void };
-    let lenisInstance: LenisInstance | null = null;
-
-    const onLenisScroll = (data: { scroll: number }) => {
-      const totalScroll = wrapper.offsetHeight - window.innerHeight;
-      if (totalScroll <= 0) return;
-      const progress = Math.max(0, Math.min(1, data.scroll / totalScroll));
-      targetFrameRef.current = progress * (TOTAL_FRAMES - 1);
-
-      const overlay = wrapper.querySelector<HTMLElement>(".cinematic-overlay");
-      if (overlay) {
-        const fadeEnd = 0.08;
-        overlay.style.opacity = String(Math.max(0, 1 - progress / fadeEnd));
-      }
-    };
-
-    // Try to hook Lenis — it should be on window by now, retry briefly if not
-    const tryHookLenis = () => {
-      const l = (window as Window & { __lenis?: LenisInstance }).__lenis;
-      if (l) { lenisInstance = l; l.on("scroll", onLenisScroll); return true; }
-      return false;
-    };
-
-    if (!tryHookLenis()) {
-      const t1 = setTimeout(() => { if (!tryHookLenis()) setTimeout(tryHookLenis, 400); }, 150);
-      return () => {
-        clearTimeout(t1);
-        cancelAnimationFrame(rafIdRef.current);
-        window.removeEventListener("scroll", onScroll);
-        lenisInstance?.off("scroll", onLenisScroll);
-      };
+    tryProxy();
+    if (!(window as Window & { __lenis?: unknown }).__lenis) {
+      setTimeout(tryProxy, 200);
     }
 
+    const st = ScrollTrigger.create({
+      trigger:  wrapper,
+      start:    "top top",
+      end:      "bottom bottom",
+      pin:      false,
+      scrub:    1.5,
+      onUpdate: (self) => {
+        targetRef.current = self.progress * (TOTAL_FRAMES - 1);
+
+        const overlay = wrapper.querySelector<HTMLElement>(".cinematic-overlay-text");
+        if (overlay) {
+          const fade = Math.max(0, 1 - self.progress / 0.06);
+          overlay.style.opacity = String(fade);
+        }
+      },
+    });
+
     return () => {
-      cancelAnimationFrame(rafIdRef.current);
-      window.removeEventListener("scroll", onScroll);
-      lenisInstance?.off("scroll", onLenisScroll);
+      st.kill();
+      ScrollTrigger.clearScrollMemory();
     };
-  }, [isMobile]);
+  }, [mounted, isMobileView]);
 
   if (!mounted) return null;
 
-  // ─── Mobile fallback ────────────────────────────────────────────────────
-  if (isMobile) {
+  if (isMobileView) {
     return (
       <section
         id="hero"
-        className="relative w-full overflow-hidden bg-[#04050a]"
-        style={{ height: "100svh", minHeight: "600px" }}
+        className="relative w-full overflow-hidden flex flex-col justify-center items-center text-center px-6 py-24 transition-colors duration-300"
+        style={{
+          minHeight: "100svh",
+          background: "var(--bg-obsidian)",
+        }}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={frameUrl(1)}
-          alt="Bharath K — Developer Portfolio"
-          style={{
-            position: "absolute", inset: 0,
-            width: "100%", height: "100%",
-            objectFit: "cover", objectPosition: "center top",
-          }}
-          loading="eager"
-        />
-        <div className="cinematic-vignette" style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
+        {/* Ambient background glow */}
         <div
-          className="cinematic-overlay"
-          style={{
-            position: "absolute", inset: 0,
-            display: "flex", flexDirection: "column",
-            alignItems: "center", justifyContent: "center",
-            textAlign: "center", padding: "0 1.5rem",
-            zIndex: 10, pointerEvents: "none",
-          }}
-        >
-          <p className="cinematic-label fade-in"  style={{ animationDelay: "0.2s", opacity: 0 }}>Full Stack Developer</p>
-          <h1 className="cinematic-name fade-in"  style={{ animationDelay: "0.4s", opacity: 0 }}>BHARATH K</h1>
-          <p className="cinematic-tagline fade-in-subtitle" style={{ animationDelay: "0.6s", opacity: 0 }}>AI · AUTOMATION · WEB</p>
+          className="absolute top-1/3 left-1/2 -translate-x-1/2 -translate-y-1/2 w-80 h-80 rounded-full blur-[100px] pointer-events-none"
+          style={{ background: "var(--hero-gradient)", opacity: 0.15 }}
+        />
+
+        <div className="relative z-10 max-w-md mx-auto flex flex-col items-center">
+          <span className="cinematic-label fade-in">Full Stack Developer</span>
+          <h1 className="cinematic-name fade-in text-4xl sm:text-5xl font-black">
+            BHARATH K
+          </h1>
+          <p className="cinematic-tagline fade-in-subtitle text-xs tracking-[0.25em] mb-8">
+            AI · AUTOMATION · WEB
+          </p>
+
+          <div className="flex flex-wrap items-center justify-center gap-3">
+            <a
+              href="#projects"
+              className="px-6 py-3 rounded-full text-xs font-bold font-mono uppercase tracking-wider bg-gradient-to-r from-[var(--accent-primary)] to-[var(--accent-secondary)] text-white shadow-lg transition-transform active:scale-95"
+            >
+              Explore Work
+            </a>
+            <a
+              href="#contact"
+              className="px-6 py-3 rounded-full text-xs font-bold font-mono uppercase tracking-wider border border-[var(--card-border)] bg-[var(--card-bg)] text-[var(--text-primary)] hover:border-[var(--accent-primary)] transition-all"
+            >
+              Get In Touch
+            </a>
+          </div>
         </div>
       </section>
     );
   }
 
-  // ─── Desktop layout ─────────────────────────────────────────────────────
   return (
-    <div ref={wrapperRef} id="hero" style={{ height: SCROLL_HEIGHT, position: "relative" }}>
+    <div
+      ref={wrapperRef}
+      id="hero"
+      style={{ height: SCROLL_HEIGHT, position: "relative" }}
+    >
       <div
-        ref={stickyRef}
-        style={{ position: "sticky", top: 0, width: "100%", height: "100vh", overflow: "hidden", background: "#04050a" }}
+        style={{
+          position: "sticky",
+          top: 0,
+          width: "100%",
+          height: "100vh",
+          overflow: "hidden",
+          background: "var(--bg-obsidian)",
+          transition: "background-color 0.3s ease",
+        }}
       >
-        {/* Loading bar */}
-        {loadProgress < 100 && (
-          <div className="cinematic-loading-bar" style={{ width: `${loadProgress}%` }} />
+        {loadPct < 100 && (
+          <div className="cinematic-loading-bar" style={{ width: `${loadPct}%` }} />
         )}
 
-        {/* Canvas */}
         <canvas
           ref={canvasRef}
           style={{
-            display: "block", width: "100%", height: "100%",
-            opacity: firstFrameReady ? 1 : 0,
-            transition: "opacity 1.2s ease-in-out",
+            display: "block",
+            width: "100%",
+            height: "100%",
+            opacity: firstReady ? 1 : 0,
+            transition: "opacity 0.9s ease-in-out",
           }}
         />
 
-        {/* Vignette + glow */}
-        <div className="cinematic-vignette" style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
-        <div className="cinematic-glow"     style={{ position: "absolute", inset: 0, pointerEvents: "none" }} />
-
-        {/* Text overlay */}
         <div
-          className="cinematic-overlay"
+          className="cinematic-vignette"
+          style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+        />
+
+        <div
+          className="cinematic-glow"
+          style={{ position: "absolute", inset: 0, pointerEvents: "none" }}
+        />
+
+        <div
+          className="cinematic-overlay-text"
           style={{
             position: "absolute", inset: 0,
             display: "flex", flexDirection: "column",
             alignItems: "center", justifyContent: "center",
             textAlign: "center", padding: "0 1.5rem",
             zIndex: 10, pointerEvents: "none",
-            transition: "opacity 0.1s linear",
+            transition: "opacity 0.08s linear",
           }}
         >
-          <p className="cinematic-label fade-in"  style={{ animationDelay: "0.4s", opacity: 0 }}>Full Stack Developer</p>
-          <h1 className="cinematic-name fade-in"  style={{ animationDelay: "0.6s", opacity: 0 }}>BHARATH K</h1>
-          <p className="cinematic-tagline fade-in-subtitle" style={{ animationDelay: "0.8s", opacity: 0 }}>AI · AUTOMATION · WEB</p>
-          <div className="cinematic-scroll-hint fade-in-subtitle" style={{ animationDelay: "1.2s", opacity: 0 }}>
+          <p className="cinematic-label fade-in" style={{ animationDelay: "0.4s" }}>
+            Full Stack Developer
+          </p>
+          <h1 className="cinematic-name fade-in" style={{ animationDelay: "0.6s" }}>
+            BHARATH K
+          </h1>
+          <p className="cinematic-tagline fade-in-subtitle" style={{ animationDelay: "0.8s" }}>
+            AI · AUTOMATION · WEB
+          </p>
+          <div
+            className="cinematic-scroll-hint fade-in-subtitle"
+            style={{ animationDelay: "1.2s" }}
+          >
             <span>SCROLL TO ENTER</span>
-            <svg className="cinematic-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden="true">
+            <svg
+              className="cinematic-arrow"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.5}
+              aria-hidden="true"
+            >
               <path d="M12 5v14M5 12l7 7 7-7" />
             </svg>
           </div>

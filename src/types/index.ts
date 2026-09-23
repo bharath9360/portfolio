@@ -27,6 +27,8 @@ export interface Capability {
   title: string;
   description: string;
   icon: string; // Lucide icon name or emoji badge
+  badge?: string;
+  themeName?: string;
   span: "col-span-1" | "col-span-2" | "col-span-3" | "md:col-span-2" | "md:col-span-3";
   tags: string[];
   accent: string;
